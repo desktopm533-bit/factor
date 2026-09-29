@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drive Dropbox</title>
+<style>
+:root{--bg:#eef2f4;--ink:#14232b;--mute:#5d6f78;--line:#c9d5da;--card:#fff;--acc:#0b6e6e;--acc2:#e9f4f3;--err:#b3261e}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1a1f;--ink:#e6eef1;--mute:#8aa0aa;--line:#26383f;--card:#16252c;--acc:#4fc3bd;--acc2:#12312f;--err:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+main{width:100%;max-width:640px}
+h1{font-size:1.6rem;margin:8px 0 4px;letter-spacing:-.01em}
+p.sub{margin:0 0 20px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px}
+input[type=password]{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit;margin-bottom:12px}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:11px 18px;background:var(--acc);color:#fff;font-weight:600}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line);padding:6px 12px;font-weight:500}
+button:focus-visible,input:focus-visible,.drop:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.drop{margin-top:16px;border:2px dashed var(--line);border-radius:10px;padding:44px 16px;text-align:center;cursor:pointer;color:var(--mute);transition:background .15s,border-color .15s}
+.drop.over{background:var(--acc2);border-color:var(--acc);color:var(--ink)}
+.drop strong{display:block;color:var(--ink);font-size:1.05rem;margin-bottom:12px}
+.drop #browseBtn{padding:10px 20px}
+#list{margin-top:16px;display:grid;gap:10px}
+.row{border:1px solid var(--line);border-radius:8px;padding:12px}
+.row .n{font-weight:600;word-break:break-all}
+.row .m{font-size:.85rem;color:var(--mute);display:flex;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap}
+.bar{height:8px;background:var(--acc2);border-radius:99px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+.err{color:var(--err)} .okc{color:var(--acc)}
+#msg{min-height:1.4em;margin:0 0 8px;color:var(--err);font-size:.9rem}
+[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Drive Dropbox</h1>
+  <p class="sub">Kahin se bhi file upload karo, seedha tumhari Google Drive mein.</p>
+
+  <section id="login" class="card" hidden>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <p id="msg" role="alert"></p>
+    <button id="loginBtn">Login</button>
+  </section>
+
+  <section id="app" class="card" hidden>
+    <div class="top"><span>Max file size: 2 GB</span><button class="ghost" id="logout">Logout</button></div>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Files chuno">
+      <strong>Files yahan drop karo</strong>
+      <button type="button" id="browseBtn">Browse Files</button>
+    </div>
+    <input id="file" type="file" multiple hidden accept="*/*">
+    <div id="list"></div>
+  </section>
+</main>
+
+<script>
+const CHUNK = 32 * 256 * 1024;            // 8 MB, 256KB ka multiple
+const MAX = 2 * 1024 ** 3 + 1024 ** 2;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = b => b >= 1e9 ? (b/1e9).toFixed(2)+" GB" : b >= 1e6 ? (b/1e6).toFixed(1)+" MB" : Math.max(1,Math.round(b/1e3))+" KB";
+
+async function api(path, body) {
+  const r = await fetch(path, {method: body ? "POST" : "GET", headers: {"Content-Type": "application/json"}, body: body ? JSON.stringify(body) : undefined});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.detail || "Error"), {status: r.status});
+  return j;
+}
+
+/* ---------- login ---------- */
+function show(loggedIn) { $("login").hidden = loggedIn; $("app").hidden = !loggedIn; }
+async function doLogin() {
+  $("msg").textContent = "";
+  try { await api("/api/login", {password: $("pw").value}); $("pw").value = ""; show(true); }
+  catch (e) { $("msg").textContent = e.message; }
+}
+$("loginBtn").onclick = doLogin;
+$("pw").onkeydown = e => e.key === "Enter" && doLogin();
+$("logout").onclick = async () => { await api("/api/logout", {}); show(false); };
+api("/api/me").then(j => show(j.ok)).catch(() => show(false));
+
+/* ---------- drop zone ---------- */
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), $("file").click());
+$("browseBtn").onclick = e => { e.stopPropagation(); $("file").click(); };
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.add("over");}));
+["dragleave","drop"].forEach(t => drop.addEventListener(t, e => {e.preventDefault(); drop.classList.remove("over");}));
+drop.addEventListener("drop", e => enqueue(e.dataTransfer.files));
+$("file").onchange = e => { enqueue(e.target.files); e.target.value = ""; };
+
+const queue = []; let running = false;
+function enqueue(files) {
+  for (const f of files) {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = '<div class="n"></div><div class="bar"><i></i></div><div class="m"><span class="st">Line mein</span><span class="sp"></span></div>';
+    row.querySelector(".n").textContent = f.name + " (" + fmt(f.size) + ")";
+    $("list").prepend(row);
+    queue.push({file: f, row});
+  }
+  runQueue();
+}
+async function runQueue() {
+  if (running) return; running = true;
+  while (queue.length) { const j = queue.shift(); await uploadOne(j.file, j.row); }
+  running = false;
+}
+
+/* ---------- resumable upload ---------- */
+function putChunk(url, blob, start, total, onProg) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open("PUT", url);
+    const end = start + blob.size - 1;
+    x.setRequestHeader("Content-Range", blob.size ? `bytes ${start}-${end}/${total}` : `bytes */${total}`);
+    x.upload.onprogress = e => onProg && onProg(e.loaded);
+    x.onload = () => resolve({status: x.status, range: x.getResponseHeader("Range"), text: x.responseText});
+    x.onerror = () => reject(new Error("network"));
+    x.ontimeout = () => reject(new Error("network"));
+    x.send(blob);
+  });
+}
+const nextFromRange = (range, fallback) => {
+  if (!range) return fallback;
+  const m = /bytes=0-(\d+)/.exec(range); return m ? +m[1] + 1 : fallback;
+};
+async function serverOffset(url, total) {           // "kahan tak upload hua?"
+  const r = await putChunk(url, new Blob([]), 0, total);
+  if (r.status === 200 || r.status === 201) return total;
+  if (r.status === 308) return nextFromRange(r.range, 0);
+  throw Object.assign(new Error("status " + r.status), {status: r.status});
+}
+
+async function uploadOne(file, row) {
+  const st = row.querySelector(".st"), sp = row.querySelector(".sp"), bar = row.querySelector("i");
+  const fail = msg => { st.textContent = msg; st.className = "st err"; };
+  if (file.size === 0) return fail("Khali file upload nahi ho sakti");
+  if (file.size > MAX) return fail("2 GB se badi file");
+
+  let url;
+  try { url = (await api("/api/init", {name: file.name, size: file.size, type: file.type})).uploadUrl; }
+  catch (e) { return e.status === 401 ? (show(false), fail("Dobara login karo")) : fail(e.message); }
+
+  let offset = 0, retries = 0, t0 = performance.now(), base = 0;
+  st.textContent = "Upload ho rahi hai...";
+  while (offset < file.size) {
+    const end = Math.min(offset + CHUNK, file.size);
+    const chunkStart = offset;
+    try {
+      const r = await putChunk(url, file.slice(offset, end), offset, file.size, loaded => {
+        const done = chunkStart + loaded;
+        bar.style.width = (done / file.size * 100) + "%";
+        const s = (done - base) / ((performance.now() - t0) / 1000);
+        sp.textContent = fmt(s) + "/s  •  " + Math.round(done / file.size * 100) + "%";
+      });
+      if (r.status === 200 || r.status === 201) { offset = file.size; break; }
+      if (r.status === 308) { offset = nextFromRange(r.range, end); retries = 0; continue; }
+      if (r.status === 404 || r.status === 410) return fail("Session expire, file dobara upload karo");
+      if (r.status === 401 || r.status === 403) return fail("Drive ne mana kiya (" + r.status + "). Server ka token/CORS check karo");
+      throw new Error("status " + r.status);
+    } catch (e) {
+      if (++retries > 8) return fail("Upload fail. Dobara koshish karo.");
+      st.textContent = `Connection masla, resume ho raha hai (${retries}/8)...`;
+      await sleep(Math.min(1000 * 2 ** retries, 30000));
+      try { offset = await serverOffset(url, file.size); base = offset; t0 = performance.now(); }
+      catch (e2) { if (e2.status === 404 || e2.status === 410) return fail("Session expire, file dobara upload karo"); }
+    }
+  }
+  bar.style.width = "100%"; sp.textContent = "";
+  st.textContent = "Drive mein save ho gayi"; st.className = "st okc";
+}
+</script>
+</body>
+</html>
