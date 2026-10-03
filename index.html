@@ -2,55 +2,134 @@
 <html lang="ur-Latn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Drive Dropbox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Factor — Upload to Drive</title>
 <style>
-:root{--bg:#eef2f4;--ink:#14232b;--mute:#5d6f78;--line:#c9d5da;--card:#fff;--acc:#0b6e6e;--acc2:#e9f4f3;--err:#b3261e}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1a1f;--ink:#e6eef1;--mute:#8aa0aa;--line:#26383f;--card:#16252c;--acc:#4fc3bd;--acc2:#12312f;--err:#ff8a80}}
+:root{
+  --bg:#f3f5f6;--ink:#121a1e;--mute:#5c6b73;--line:#d7dee1;--card:#ffffff;
+  --acc:#0f6e63;--acc-ink:#ffffff;--acc2:#e6f2f0;--err:#ba1a1a;--err-bg:#fdecea;--ok:#0f6e63;
+  --radius:16px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1416;--ink:#eaf1f0;--mute:#93a5a9;--line:#263338;--card:#121c1f;
+    --acc:#3ddbc6;--acc-ink:#07211d;--acc2:#132a27;--err:#ff8a80;--err-bg:#2a1413;--ok:#3ddbc6;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1416;--ink:#eaf1f0;--mute:#93a5a9;--line:#263338;--card:#121c1f;
+  --acc:#3ddbc6;--acc-ink:#07211d;--acc2:#132a27;--err:#ff8a80;--err-bg:#2a1413;--ok:#3ddbc6;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
-main{width:100%;max-width:640px}
-h1{font-size:1.6rem;margin:8px 0 4px;letter-spacing:-.01em}
-p.sub{margin:0 0 20px;color:var(--mute)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px}
-input[type=password]{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit;margin-bottom:12px}
-button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:11px 18px;background:var(--acc);color:#fff;font-weight:600}
-button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line);padding:6px 12px;font-weight:500}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif;
+  display:flex;justify-content:center;align-items:flex-start;
+  padding:32px 16px 48px;
+}
+main{width:100%;max-width:460px}
+
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.mark{
+  width:44px;height:44px;border-radius:12px;flex:none;
+  background:linear-gradient(135deg,var(--acc),#0a4b44);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1.3rem;color:#fff;letter-spacing:-.02em;
+  box-shadow:0 4px 14px -4px rgba(15,110,99,.5);
+}
+.brand h1{font-size:1.4rem;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--mute);font-size:.88rem}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+label{display:block;font-size:.85rem;font-weight:600;color:var(--mute);margin-bottom:6px}
+.pwrap{position:relative}
+input[type=password],input[type=text]{
+  width:100%;padding:13px 44px 13px 14px;border:1.5px solid var(--line);border-radius:10px;
+  background:transparent;color:inherit;font:inherit;font-size:16px;
+}
+input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc2)}
+.eye{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  background:none;border:0;padding:8px;color:var(--mute);border-radius:8px;
+}
+.eye:hover{color:var(--ink)}
+
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:13px 20px;
+  background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:.97rem}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.6;cursor:default}
+button.block{width:100%;margin-top:14px}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line);padding:7px 14px;font-weight:600;font-size:.85rem}
 button:focus-visible,input:focus-visible,.drop:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.drop{margin-top:16px;border:2px dashed var(--line);border-radius:10px;padding:44px 16px;text-align:center;cursor:pointer;color:var(--mute);transition:background .15s,border-color .15s}
+
+#msg{min-height:1.3em;margin:0 0 4px;color:var(--err);font-size:.87rem}
+#msg:empty{display:none}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px}
+.top .hint{font-size:.85rem;color:var(--mute)}
+
+.drop{margin-top:16px;border:2px dashed var(--line);border-radius:12px;padding:40px 16px;
+  text-align:center;cursor:pointer;color:var(--mute);transition:background .15s,border-color .15s}
 .drop.over{background:var(--acc2);border-color:var(--acc);color:var(--ink)}
-.drop strong{display:block;color:var(--ink);font-size:1.05rem;margin-bottom:12px}
-.drop #browseBtn{padding:10px 20px}
-#list{margin-top:16px;display:grid;gap:10px}
-.row{border:1px solid var(--line);border-radius:8px;padding:12px}
-.row .n{font-weight:600;word-break:break-all}
-.row .m{font-size:.85rem;color:var(--mute);display:flex;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap}
-.bar{height:8px;background:var(--acc2);border-radius:99px;overflow:hidden;margin-top:8px}
+.drop svg{opacity:.55;margin-bottom:10px}
+.drop strong{display:block;color:var(--ink);font-size:1.02rem;margin-bottom:14px}
+.drop .browse{padding:10px 22px;font-size:.92rem}
+
+#list{margin-top:18px;display:grid;gap:10px}
+.row{border:1px solid var(--line);border-radius:12px;padding:13px}
+.row .n{font-weight:600;word-break:break-all;font-size:.93rem}
+.row .m{font-size:.82rem;color:var(--mute);display:flex;justify-content:space-between;gap:8px;margin-top:7px;flex-wrap:wrap}
+.bar{height:7px;background:var(--acc2);border-radius:99px;overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
-.err{color:var(--err)} .okc{color:var(--acc)}
-#msg{min-height:1.4em;margin:0 0 8px;color:var(--err);font-size:.9rem}
+.err{color:var(--err)} .okc{color:var(--ok);font-weight:600}
+
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--acc2);border-top-color:var(--acc);
+  animation:sp .8s linear infinite;display:inline-block;vertical-align:-4px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:4px;padding:30px 0;color:var(--mute);font-size:.9rem}
+.waking{font-size:.8rem;color:var(--mute);margin-top:10px;text-align:center}
+
 [hidden]{display:none!important}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
 </style>
 </head>
 <body>
 <main>
-  <h1>Drive Dropbox</h1>
-  <p class="sub">Kahin se bhi file upload karo, seedha tumhari Google Drive mein.</p>
+  <div class="brand">
+    <div class="mark">F</div>
+    <div>
+      <h1>Factor</h1>
+      <p>Kahin se bhi upload karo, seedha Google Drive mein</p>
+    </div>
+  </div>
+
+  <section id="boot" class="card">
+    <div class="loading"><span class="spin"></span>Connect ho raha hai...</div>
+    <p class="waking" id="wakingMsg" hidden>Server neend se jaag raha hai, thoda sa wait karo...</p>
+  </section>
 
   <section id="login" class="card" hidden>
     <label for="pw">Password</label>
-    <input id="pw" type="password" autocomplete="current-password">
+    <div class="pwrap">
+      <input id="pw" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="eye" id="eye" aria-label="Password dikhao">
+        <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <p id="msg" role="alert"></p>
-    <button id="loginBtn">Login</button>
+    <button id="loginBtn" class="block">Login</button>
   </section>
 
   <section id="app" class="card" hidden>
-    <div class="top"><span>Max file size: 2 GB</span><button class="ghost" id="logout">Logout</button></div>
+    <div class="top"><span class="hint">Max file size: 2 GB</span><button class="ghost" id="logout">Logout</button></div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Files chuno">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <strong>Files yahan drop karo</strong>
-      <button type="button" id="browseBtn">Browse Files</button>
+      <button type="button" class="browse" id="browseBtn">Browse Files</button>
     </div>
     <input id="file" type="file" multiple hidden accept="*/*">
     <div id="list"></div>
@@ -64,24 +143,67 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const fmt = b => b >= 1e9 ? (b/1e9).toFixed(2)+" GB" : b >= 1e6 ? (b/1e6).toFixed(1)+" MB" : Math.max(1,Math.round(b/1e3))+" KB";
 
-async function api(path, body) {
-  const r = await fetch(path, {method: body ? "POST" : "GET", headers: {"Content-Type": "application/json"}, body: body ? JSON.stringify(body) : undefined});
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(j.detail || "Error"), {status: r.status});
-  return j;
+async function api(path, body, timeoutMs) {
+  const ctrl = new AbortController();
+  const t = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  try {
+    const r = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: {"Content-Type": "application/json"},
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(j.detail || "Error"), {status: r.status});
+    return j;
+  } finally { if (t) clearTimeout(t); }
 }
 
-/* ---------- login ---------- */
-function show(loggedIn) { $("login").hidden = loggedIn; $("app").hidden = !loggedIn; }
+/* ---------- boot / login ---------- */
+function showScreen(which) {
+  $("boot").hidden = which !== "boot";
+  $("login").hidden = which !== "login";
+  $("app").hidden = which !== "app";
+  if (which === "login") setTimeout(() => $("pw").focus(), 50);
+}
+
+(async () => {
+  const wakeTimer = setTimeout(() => { $("wakingMsg").hidden = false; }, 4000);
+  try {
+    const j = await api("/api/me", null, 60000);  // Render free tier cold start allow karo
+    clearTimeout(wakeTimer);
+    showScreen(j.ok ? "app" : "login");
+  } catch (e) {
+    clearTimeout(wakeTimer);
+    showScreen("login");
+    $("msg").textContent = "Server se connect nahi ho saka. Page reload karo.";
+  }
+})();
+
 async function doLogin() {
   $("msg").textContent = "";
-  try { await api("/api/login", {password: $("pw").value}); $("pw").value = ""; show(true); }
-  catch (e) { $("msg").textContent = e.message; }
+  const btn = $("loginBtn");
+  btn.disabled = true; btn.textContent = "Checking...";
+  try {
+    await api("/api/login", {password: $("pw").value});
+    $("pw").value = "";
+    showScreen("app");
+  } catch (e) {
+    $("msg").textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Login";
+  }
 }
 $("loginBtn").onclick = doLogin;
 $("pw").onkeydown = e => e.key === "Enter" && doLogin();
-$("logout").onclick = async () => { await api("/api/logout", {}); show(false); };
-api("/api/me").then(j => show(j.ok)).catch(() => show(false));
+$("eye").onclick = () => {
+  const showing = $("pw").type === "text";
+  $("pw").type = showing ? "password" : "text";
+  $("eyeIcon").innerHTML = showing
+    ? '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.22 3.22M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+};
+$("logout").onclick = async () => { try { await api("/api/logout", {}); } catch {} showScreen("login"); };
 
 /* ---------- drop zone ---------- */
 const drop = $("drop");
@@ -144,7 +266,7 @@ async function uploadOne(file, row) {
 
   let url;
   try { url = (await api("/api/init", {name: file.name, size: file.size, type: file.type})).uploadUrl; }
-  catch (e) { return e.status === 401 ? (show(false), fail("Dobara login karo")) : fail(e.message); }
+  catch (e) { return e.status === 401 ? (showScreen("login"), fail("Dobara login karo")) : fail(e.message); }
 
   let offset = 0, retries = 0, t0 = performance.now(), base = 0;
   st.textContent = "Upload ho rahi hai...";
