@@ -1,1 +1,314 @@
-Factor — Upload to Drive
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Factor — Upload to Drive</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f6e63'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='800' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+<style>
+:root {
+--acc: #3ddbc6;
+--acc-hover: #2bbca9;
+--err: #ff6b6b;
+--ok: #3ddbc6;
+--radius: 20px;
+box-sizing: border-box;
+padding-top: env(safe-area-inset-top, 0px);
+padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+• { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+color: #fff;
+font: 16px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+padding: 32px 16px 48px;
+min-height: 100vh;
+}
+main { width: 100%; max-width: 460px; }
+
+.glass {
+background: rgba(255, 255, 255, 0.08);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.15);
+border-radius: var(--radius);
+box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
+.mark {
+width: 48px; height: 48px; min-width: 48px; min-height: 48px;
+border-radius: 14px; flex: 0 0 48px;
+background: linear-gradient(135deg, var(--acc), #0a4b44);
+display: flex; align-items: center; justify-content: center;
+font-weight: 800; font-size: 1.5rem; color: #fff;
+box-shadow: 0 4px 14px rgba(61, 219, 198, 0.4);
+}
+.brand h1 { font-size: 1.6rem; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+.brand p { margin: 2px 0 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; }
+
+.card { padding: 28px; }
+
+label { display: block; font-size: 0.9rem; font-weight: 500; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; }
+.pwrap { position: relative; }
+
+input[type=password], input[type=text] {
+width: 100%; padding: 14px 44px 14px 16px;
+border: 1px solid rgba(255, 255, 255, 0.2);
+border-radius: 12px;
+background: rgba(0, 0, 0, 0.15);
+color: #fff; font: inherit; font-size: 16px;
+transition: all 0.2s ease;
+}
+input::placeholder { color: rgba(255, 255, 255, 0.4); }
+input:focus { outline: none; border-color: var(--acc); background: rgba(0, 0, 0, 0.25); box-shadow: 0 0 0 3px rgba(61, 219, 198, 0.2); }
+
+.eye {
+position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+background: none; border: 0; padding: 8px; color: rgba(255, 255, 255, 0.6); border-radius: 8px; cursor: pointer; transition: color 0.2s;
+}
+.eye:hover { color: #fff; }
+
+button {
+font: inherit; cursor: pointer; border: 0; border-radius: 12px; padding: 14px 20px;
+background: var(--acc); color: #07211d; font-weight: 700; font-size: 1rem;
+transition: transform 0.1s, background 0.2s, opacity 0.2s;
+}
+button:hover { background: var(--acc-hover); }
+button:active { transform: translateY(2px); }
+button:disabled { opacity: 0.6; cursor: default; transform: none; }
+button.block { width: 100%; margin-top: 18px; }
+button.ghost {
+background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);
+padding: 8px 16px; font-weight: 500; font-size: 0.85rem; border-radius: 10px;
+}
+button.ghost:hover { background: rgba(255, 255, 255, 0.15); }
+button:focus-visible, input:focus-visible, .drop:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+#msg { min-height: 1.3em; margin: 4px 0 8px; color: var(--err); font-size: 0.85rem; }
+#msg:empty { display: none; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.top .hint { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); }
+
+.drop {
+margin-top: 16px; border: 2px dashed rgba(255, 255, 255, 0.3); border-radius: 14px; padding: 40px 16px;
+text-align: center; cursor: pointer; color: rgba(255, 255, 255, 0.8);
+background: rgba(0, 0, 0, 0.05); transition: all 0.2s;
+}
+.drop.over, .drop:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--acc); color: #fff; }
+.drop svg { opacity: 0.8; margin-bottom: 12px; color: var(--acc); }
+.drop strong { display: block; color: #fff; font-size: 1.1rem; margin-bottom: 16px; font-weight: 600; }
+.drop .browse { padding: 10px 24px; font-size: 0.95rem; }
+
+#list { margin-top: 20px; display: grid; gap: 12px; }
+.row {
+background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);
+border-radius: 12px; padding: 16px;
+}
+.row .n { font-weight: 500; word-break: break-all; font-size: 0.95rem; }
+.row .m { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.bar { height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 99px; overflow: hidden; margin-top: 12px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--acc); transition: width 0.2s ease-out; box-shadow: 0 0 8px var(--acc); }
+.err { color: var(--err); } .okc { color: var(--ok); font-weight: 600; text-shadow: 0 0 5px rgba(61, 219, 198, 0.3); }
+
+.spin {
+width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, 0.2); border-top-color: var(--acc);
+animation: sp 0.8s linear infinite; display: inline-block; vertical-align: -4px; margin-right: 8px;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+.loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 30px 0; color: rgba(255, 255, 255, 0.8); font-size: 0.95rem; }
+.waking { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-top: 10px; text-align: center; }
+
+[hidden] { display: none !important; }
+@media(prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<main>
+<div class="brand">
+<div class="mark">F</div>
+<div>
+<h1>Factor</h1>
+<p>Kahin se bhi upload karo, seedha Google Drive mein</p>
+</div>
+</div>
+
+<section id="boot" class="card glass">
+<div class="loading"><span class="spin"></span>Connect ho raha hai...</div>
+<p class="waking" id="wakingMsg" hidden>Server neend se jaag raha hai, thoda sa wait karo...</p>
+</section>
+
+<section id="login" class="card glass" hidden>
+<label for="pw">Password</label>
+<div class="pwrap">
+<input id="pw" type="password" placeholder="Password yahan likhein">
+<button type="button" class="eye" id="eye" aria-label="Password dikhao">
+<svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+</button>
+</div>
+<p id="msg" role="alert"></p>
+<button id="loginBtn" class="block">Login</button>
+</section>
+
+<section id="app" class="card glass" hidden>
+<div class="top"><span class="hint">Max file size: 2 GB</span><button class="ghost" id="logout">Logout</button></div>
+<div class="drop glass" id="drop" tabindex="0" role="button" aria-label="Files chuno">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+<strong>Files yahan drop karo</strong>
+<button type="button" class="browse" id="browseBtn">Browse Files</button>
+</div>
+<input id="file" type="file" hidden accept="/">
+<div id="list"></div>
+</section>
+</main>
+
+<script>
+const CHUNK = 32 * 256 * 1024;
+ const MAX = 2 * 1024 ** 3 + 1024 ** 2;
+const $` = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = b => b >= 1e9 ? (b/1e9).toFixed(2)+" GB" : b >= 1e6 ? (b/1e6).toFixed(1)+" MB" : Math.max(1,Math.round(b/1e3))+" KB";
+
+async function api(path, body, timeoutMs) {
+const ctrl = new AbortController();
+const t = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+try {
+const r = await fetch(path, {
+method: body ? "POST" : "GET",
+headers: {"Content-Type": "application/json"},
+body: body ? JSON.stringify(body) : undefined,
+signal: ctrl.signal
+});
+const j = await r.json().catch(() => ({}));
+if (!r.ok) throw Object.assign(new Error(j.detail || "Error"), {status: r.status});
+return j;
+} finally { if (t) clearTimeout(t); }
+}
+
+function showScreen(which) {
+$("boot").hidden = which !== "boot"; $("login").hidden = which !== "login";
+$("app").hidden = which !== "app"; if (which === "login") setTimeout(() =&gt; $("pw").focus(), 50);
+}
+
+(async () => {
+const wakeTimer = setTimeout(() => { $("wakingMsg").hidden = false; }, 4000); try { const j = await api("/api/me", null, 60000); clearTimeout(wakeTimer); showScreen(j.ok ? "app" : "login"); } catch (e) { clearTimeout(wakeTimer); showScreen("login"); $("msg").textContent = "Server se connect nahi ho saka. Page reload karo.";
+}
+})();
+
+async function doLogin() {
+$("msg").textContent = ""; const btn = $("loginBtn");
+btn.disabled = true; btn.textContent = "Checking...";
+try {
+await api("/api/login", {password: $("pw").value}); $("pw").value = "";
+showScreen("app");
+} catch (e) {
+$("msg").textContent = e.message; } finally { btn.disabled = false; btn.textContent = "Login"; } } $("loginBtn").onclick = doLogin;
+
+`$("pw").addEventListener("keydown", function(e) {
+if (e.key === "Enter") {
+e.preventDefault();
+doLogin();
+}
+});
+
+latex
+("eye").onclick = () =&gt; { const showing = 
+
+("pw").type === "text";
+("eyeIcon").innerHTML = showing
+? '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>'
+: '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.22 3.22M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+};
+$`("logout").onclick = async () => { try { await api("/api/logout", {}); } catch {} showScreen("login"); };
+
+const drop = $("drop"); drop.onclick = () =&gt; $("file").click();
+drop.onkeydown = e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), $("file").click()); $("browseBtn").onclick = e => { e.stopPropagation(); $("file").click(); }; ["dragenter","dragover"].forEach(t =&gt; drop.addEventListener(t, e =&gt; {e.preventDefault(); drop.classList.add("over");})); ["dragleave","drop"].forEach(t =&gt; drop.addEventListener(t, e =&gt; {e.preventDefault(); drop.classList.remove("over");})); drop.addEventListener("drop", e =&gt; enqueue(e.dataTransfer.files)); $("file").onchange = e => { enqueue(e.target.files); e.target.value = ""; };
+
+const queue = []; let running = false;
+function enqueue(files) {
+for (const f of files) {
+const row = document.createElement("div");
+row.className = "row";
+row.innerHTML = '<div class="n"></div><div class="bar"><i></i></div><div class="m"><span class="st">Line mein</span><span class="sp"></span></div>';
+row.querySelector(".n").textContent = f.name + " (" + fmt(f.size) + ")";
+`$("list").prepend(row);
+queue.push({file: f, row});
+}
+runQueue();
+}
+async function runQueue() {
+if (running) return; running = true;
+while (queue.length) { const j = queue.shift(); await uploadOne(j.file, j.row); }
+running = false;
+}
+
+function putChunk(url, blob, start, total, onProg) {
+return new Promise((resolve, reject) => {
+const x = new XMLHttpRequest();
+x.open("PUT", url);
+const end = start + blob.size - 1;
+x.setRequestHeader("Content-Range", blob.size ? bytes ${start}-${end}/${total}:bytes */${total});
+x.upload.onprogress = e => onProg && onProg(e.loaded);
+x.onload = () => resolve({status: x.status, range: x.getResponseHeader("Range"), text: x.responseText});
+x.onerror = () => reject(new Error("network"));
+x.ontimeout = () => reject(new Error("network"));
+x.send(blob);
+});
+}
+const nextFromRange = (range, fallback) => {
+if (!range) return fallback;
+const m = /bytes=0-(\d+)/.exec(range); return m ? +m[1] + 1 : fallback;
+};
+async function serverOffset(url, total) {
+const r = await putChunk(url, new Blob([]), 0, total);
+if (r.status === 200 || r.status === 201) return total;
+if (r.status === 308) return nextFromRange(r.range, 0);
+throw Object.assign(new Error("status " + r.status), {status: r.status});
+}
+
+async function uploadOne(file, row) {
+const st = row.querySelector(".st"), sp = row.querySelector(".sp"), bar = row.querySelector("i");
+const fail = msg => { st.textContent = msg; st.className = "st err"; };
+if (file.size === 0) return fail("Khali file upload nahi ho sakti");
+if (file.size > MAX) return fail("2 GB se badi file");
+
+let url;
+try { url = (await api("/api/init", {name: file.name, size: file.size, type: file.type})).uploadUrl; }
+catch (e) { return e.status === 401 ? (showScreen("login"), fail("Dobara login karo")) : fail(e.message); }
+
+let offset = 0, retries = 0, t0 = performance.now(), base = 0;
+st.textContent = "Upload ho rahi hai...";
+while (offset < file.size) {
+const end = Math.min(offset + CHUNK, file.size);
+const chunkStart = offset;
+try {
+const r = await putChunk(url, file.slice(offset, end), offset, file.size, loaded => {
+const done = chunkStart + loaded;
+bar.style.width = (done / file.size * 100) + "%";
+const s = (done - base) / ((performance.now() - t0) / 1000);
+sp.textContent = fmt(s) + "/s • " + Math.round(done / file.size * 100) + "%";
+});
+if (r.status === 200 || r.status === 201) { offset = file.size; break; }
+if (r.status === 308) { offset = nextFromRange(r.range, end); retries = 0; continue; }
+if (r.status === 404 || r.status === 410) return fail("Session expire, file dobara upload karo");
+if (r.status === 401 || r.status === 403) return fail("Drive ne mana kiya (" + r.status + "). Server ka token/CORS check karo");
+throw new Error("status " + r.status);
+} catch (e) {
+if (++retries > 8) return fail("Upload fail. Dobara koshish karo.");
+st.textContent = Connection masla, resume ho raha hai (${retries}/8)...;
+await sleep(Math.min(1000 * 2 ** retries, 30000));
+try { offset = await serverOffset(url, file.size); base = offset; t0 = performance.now(); }
+catch (e2) { if (e2.status === 404 || e2.status === 410) return fail("Session expire, file dobara upload karo"); }
+}
+}
+bar.style.width = "100%"; sp.textContent = "";
+st.textContent = "Drive mein save ho gayi"; st.className = "st okc";
+}
+</script>
+</body>
+</html>
