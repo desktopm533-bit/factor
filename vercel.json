@@ -1,5 +1,5 @@
-{
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://BACKEND_NAAM/api/:path*" }
-  ]
-}
+   {
+     "rewrites": [
+       { "source": "/api/:path*", "destination": "https://factor-backend-ka9g.onrender.com/api/:path*" }
+     ]
+   }
