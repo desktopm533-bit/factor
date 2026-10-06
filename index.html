@@ -170,10 +170,10 @@ button:focus-visible, .drop:focus-visible { outline: 2px solid #fff; outline-off
   </form>
 </main>
 
-<!-- upload page -->
+<!-- Edit page -->
 <main id="app" class="wide" hidden>
   <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
-  <h1>Enter</h1>
+  <h1>Editor's Choice</h1>
   <p class="sub">Faster as You Wish &nbsp;•&nbsp; Max file size: 2 GB</p>
   <div class="drop" id="drop" tabindex="0" role="button" aria-label="Files chuno">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -228,20 +228,20 @@ function showScreen(which) {
 (async () => {
   const wakeTimer = setTimeout(() => { $("wakingMsg").hidden = false; }, 4000);
   try {
-    const j = await api("/api/me", null, 60000);  // Render free tier cold start allow karo
+    const j = await api("/api/me", null, 60000);  // rcs allow
     clearTimeout(wakeTimer);
     showScreen(j.ok ? "app" : "login");
   } catch (e) {
     clearTimeout(wakeTimer);
     showScreen("login");
-    $("msg").textContent = "Server se connect nahi ho saka. Page reload karo.";
+    $("msg").textContent = "Failed To Connect Server. Reload Page.";
   }
 })();
 
 async function doLogin() {
   $("msg").textContent = "";
   const username = $("user").value.trim();
-  if (!username || !$("pw").value) { $("msg").textContent = "Username aur password dono likhein"; return; }
+  if (!username || !$("pw").value) { $("msg").textContent = "Enter Username and Password"; return; }
   const btn = $("loginBtn");
   btn.disabled = true; btn.textContent = "Checking...";
   try {
@@ -342,19 +342,19 @@ async function uploadOne(file, row) {
       });
       if (r.status === 200 || r.status === 201) { offset = file.size; break; }
       if (r.status === 308) { offset = nextFromRange(r.range, end); retries = 0; continue; }
-      if (r.status === 404 || r.status === 410) return fail("Session expire, file dobara upload karo");
-      if (r.status === 401 || r.status === 403) return fail("Drive ne mana kiya (" + r.status + "). Server ka token/CORS check karo");
+      if (r.status === 404 || r.status === 410) return fail("Session Expire, Drop File Again");
+      if (r.status === 401 || r.status === 403) return fail("Drive say No! (" + r.status + "). Check Server token/CORS and try again");
       throw new Error("status " + r.status);
     } catch (e) {
       if (++retries > 8) return fail("Upload fail. Dobara koshish karo.");
       st.textContent = `Connection masla, resume ho raha hai (${retries}/8)...`;
       await sleep(Math.min(1000 * 2 ** retries, 30000));
       try { offset = await serverOffset(url, file.size); base = offset; t0 = performance.now(); }
-      catch (e2) { if (e2.status === 404 || e2.status === 410) return fail("Session expire, file dobara upload karo"); }
+      catch (e2) { if (e2.status === 404 || e2.status === 410) return fail("Session expire, Drop File Again"); }
     }
   }
   bar.style.width = "100%"; sp.textContent = "";
-  st.textContent = "Drive mein save ho gayi"; st.className = "st okc";
+  st.textContent = "File Loaded Successfully!"; st.className = "st okc";
 }
 </script>
 </body>
