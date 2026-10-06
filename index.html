@@ -275,13 +275,13 @@ $("browseBtn").onclick = e => { e.stopPropagation(); $("file").click(); };
 drop.addEventListener("drop", e => enqueue(e.dataTransfer.files));
 $("file").onchange = e => { enqueue(e.target.files); e.target.value = ""; };
 
-const queue = []; let running = false;
+const queue = []; let running = false; let fileCount = 0;
 function enqueue(files) {
   for (const f of files) {
     const row = document.createElement("div");
     row.className = "row";
     row.innerHTML = '<div class="n"></div><div class="bar"><i></i></div><div class="m"><span class="st">Line mein</span><span class="sp"></span></div>';
-    row.querySelector(".n").textContent = f.name + " (" + fmt(f.size) + ")";
+    row.querySelector(".n").textContent = "File-" + (++fileCount) + " (" + fmt(f.size) + ")";
     $("list").prepend(row);
     queue.push({file: f, row});
   }
