@@ -4,167 +4,183 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Factor — Upload to Drive</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f6e63'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='800' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --acc: #3ddbc6;
-  --acc-hover: #2bbca9;
-  --err: #ff6b6b;
-  --ok: #3ddbc6;
-  --radius: 20px;
+  --navy: #0a3f87;
+  --navy-hover: #08336d;
+  --line: rgba(255, 255, 255, .78);
+  --soft: rgba(255, 255, 255, .72);
+  --err: #ffc2c2;
+  --ok: #b8f5d2;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-*{box-sizing:border-box}
-html, body { height: 100%; margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+/* ---- blurred blue backdrop (same on login + upload page) ---- */
 body {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  position: relative;
+  min-height: 100vh;
+  background: #2a65bd;
   color: #fff;
-  font: 16px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+  font: 400 15px/1.5 "Montserrat", "Segoe UI", system-ui, -apple-system, sans-serif;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 32px 16px 48px;
-  min-height: 100vh;
+  padding: 40px 20px 56px;
+  overflow-x: hidden;
 }
-main { width: 100%; max-width: 460px; }
-
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+body::before {
+  content: ""; position: fixed; inset: -10%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 34% at 6% 6%,  #d4e6ff 0%, rgba(212, 230, 255, 0) 100%),
+    radial-gradient(40% 40% at 88% 36%, #6fa6f2 0%, rgba(111, 166, 242, 0) 100%),
+    radial-gradient(46% 42% at 4% 92%,  #1a53a8 0%, rgba(26, 83, 168, 0) 100%),
+    radial-gradient(40% 36% at 100% 100%, #082e6e 0%, rgba(8, 46, 110, 0) 100%),
+    linear-gradient(160deg, #5b97ec 0%, #2a65bd 55%, #1d4f9e 100%);
+  filter: blur(26px);
 }
+main { width: 100%; max-width: 340px; margin: auto 0; text-align: center; }
+main.wide { max-width: 520px; }
 
-.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
-.mark {
-  width: 48px; height: 48px; min-width: 48px; min-height: 48px;
-  border-radius: 14px; flex: 0 0 48px;
-  background: linear-gradient(135deg, var(--acc), #0a4b44);
-  display: flex; align-items: center; justify-content: center; line-height:1;
-  font-weight: 800; font-size: 1.5rem; color: #fff !important;
-  box-shadow: 0 4px 14px rgba(61, 219, 198, 0.4);
+/* ---- logo: white plate so the grey wordmark stays readable on blue ---- */
+.plate {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border-radius: 14px; padding: 14px 24px;
+  box-shadow: 0 10px 30px rgba(6, 36, 90, .28);
 }
-.brand h1 { font-size: 1.6rem; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
-.brand p { margin: 2px 0 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; }
+.plate img { display: block; height: 30px; width: auto; }
 
-.card { padding: 28px; }
-
-label { display: block; font-size: 0.9rem; font-weight: 500; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px; }
-.pwrap { position: relative; }
-
-input[type=password], input[type=text] {
-  width: 100%; padding: 14px 44px 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.15);
-  color: #fff; font: inherit; font-size: 16px;
-  transition: all 0.2s ease;
+h1 {
+  margin: 22px 0 34px; font-size: 1.5rem; font-weight: 300;
+  letter-spacing: .2em; text-transform: uppercase; color: rgba(255, 255, 255, .92);
 }
-input::placeholder { color: rgba(255, 255, 255, 0.4); }
-input:focus { outline: none; border-color: var(--acc); background: rgba(0, 0, 0, 0.25); box-shadow: 0 0 0 3px rgba(61, 219, 198, 0.2); }
+.sub { margin: -20px 0 26px; color: var(--soft); font-size: .85rem; }
 
-.eye {
-  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-  background: none; border: 0; padding: 8px; color: rgba(255, 255, 255, 0.6); border-radius: 8px; cursor: pointer; transition: color 0.2s;
+/* ---- underline fields ---- */
+.field { position: relative; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); margin-bottom: 26px; transition: border-color .2s; }
+.field:focus-within { border-bottom-color: #fff; box-shadow: 0 1px 0 #fff; }
+.field > svg { flex: 0 0 18px; color: #fff; }
+.field input {
+  flex: 1; min-width: 0; padding: 10px 0; border: 0; background: transparent; color: #fff;
+  font: inherit; font-size: 16px; letter-spacing: .02em;
 }
+.field input::placeholder { color: rgba(255, 255, 255, .9); }
+.field input:focus { outline: none; }
+.field input:-webkit-autofill { -webkit-text-fill-color: #fff; transition: background-color 9999s ease-in-out 0s; }
+.eye { background: none; border: 0; padding: 6px; margin-right: -6px; color: var(--soft); cursor: pointer; border-radius: 4px; display: flex; }
 .eye:hover { color: #fff; }
 
-button {
-  font: inherit; cursor: pointer; border: 0; border-radius: 12px; padding: 14px 20px;
-  background: var(--acc); color: #07211d; font-weight: 700; font-size: 1rem;
-  transition: transform 0.1s, background 0.2s, opacity 0.2s;
-}
-button:hover { background: var(--acc-hover); }
-button:active { transform: translateY(2px); }
-button:disabled { opacity: 0.6; cursor: default; transform: none; }
-button.block { width: 100%; margin-top: 18px; }
-button.ghost {
-  background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 8px 16px; font-weight: 500; font-size: 0.85rem; border-radius: 10px;
-}
-button.ghost:hover { background: rgba(255, 255, 255, 0.15); }
-button:focus-visible, input:focus-visible, .drop:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.opts { display: flex; align-items: center; justify-content: flex-start; margin: -2px 0 24px; font-size: .78rem; }
+.check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; user-select: none; }
+.check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.check .box { width: 14px; height: 14px; background: rgba(6, 36, 90, .35); border: 1px solid var(--line); display: grid; place-items: center; }
+.check .box svg { opacity: 0; width: 10px; height: 10px; }
+.check input:checked + .box { background: var(--navy); border-color: var(--navy); }
+.check input:checked + .box svg { opacity: 1; }
+.check input:focus-visible + .box { outline: 2px solid #fff; outline-offset: 2px; }
 
-#msg { min-height: 1.3em; margin: 4px 0 8px; color: var(--err); font-size: 0.85rem; }
+/* ---- buttons ---- */
+button { font: inherit; cursor: pointer; }
+.btn {
+  width: 100%; height: 46px; border: 0; border-radius: 0; background: var(--navy); color: #fff;
+  font-size: .78rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  transition: background .2s, opacity .2s;
+}
+.btn:hover { background: var(--navy-hover); }
+.btn:disabled { opacity: .65; cursor: default; }
+.btn.sm { width: auto; height: 40px; padding: 0 26px; }
+.link { background: none; border: 0; padding: 4px; color: #fff; font-style: italic; font-size: .78rem; text-decoration: underline; text-underline-offset: 3px; opacity: .9; }
+.link:hover { opacity: 1; }
+button:focus-visible, .drop:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+#msg { margin: 0 0 16px; color: var(--err); font-size: .82rem; text-align: left; }
 #msg:empty { display: none; }
 
-.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-.top .hint { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); }
-
+/* ---- upload page ---- */
 .drop {
-  margin-top: 16px; border: 2px dashed rgba(255, 255, 255, 0.3); border-radius: 14px; padding: 40px 16px;
-  text-align: center; cursor: pointer; color: rgba(255, 255, 255, 0.8);
-  background: rgba(0, 0, 0, 0.05); transition: all 0.2s;
+  border: 1px dashed rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .07);
+  padding: 42px 16px; cursor: pointer; transition: background .2s, border-color .2s;
 }
-.drop.over, .drop:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--acc); color: #fff; }
-.drop svg { opacity: 0.8; margin-bottom: 12px; color: var(--acc); }
-.drop strong { display: block; color: #fff; font-size: 1.1rem; margin-bottom: 16px; font-weight: 600; }
-.drop .browse { padding: 10px 24px; font-size: 0.95rem; }
+.drop.over, .drop:hover { background: rgba(255, 255, 255, .15); border-color: #fff; }
+.drop svg { color: #fff; margin-bottom: 14px; }
+.drop strong { display: block; font-weight: 400; font-size: 1rem; letter-spacing: .04em; margin-bottom: 18px; }
+#list { margin-top: 22px; display: grid; gap: 12px; text-align: left; }
+.row { background: rgba(6, 40, 98, .5); padding: 14px 16px; }
+.row .n { font-weight: 500; font-size: .88rem; word-break: break-all; }
+.row .m { font-size: .76rem; color: var(--soft); display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.bar { height: 3px; background: rgba(255, 255, 255, .22); margin-top: 12px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: #fff; transition: width .2s ease-out; }
+.err { color: var(--err); }
+.okc { color: var(--ok); font-weight: 600; }
+.foot { margin-top: 30px; }
 
-#list { margin-top: 20px; display: grid; gap: 12px; }
-.row {
-  background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px; padding: 16px;
-}
-.row .n { font-weight: 500; word-break: break-all; font-size: 0.95rem; }
-.row .m { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.bar { height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 99px; overflow: hidden; margin-top: 12px; }
-.bar i { display: block; height: 100%; width: 0; background: var(--acc); transition: width 0.2s ease-out; box-shadow: 0 0 8px var(--acc); }
-.err { color: var(--err); } .okc { color: var(--ok); font-weight: 600; text-shadow: 0 0 5px rgba(61, 219, 198, 0.3); }
-
-.spin {
-  width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, 0.2); border-top-color: var(--acc);
-  animation: sp 0.8s linear infinite; display: inline-block; vertical-align: -4px; margin-right: 8px;
-}
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); border-top-color: #fff; animation: sp .8s linear infinite; display: inline-block; vertical-align: -5px; margin-right: 10px; }
 @keyframes sp { to { transform: rotate(360deg); } }
-.loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 30px 0; color: rgba(255, 255, 255, 0.8); font-size: 0.95rem; }
-.waking { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-top: 10px; text-align: center; }
+.loading { padding: 10px 0; color: #fff; font-size: .9rem; }
+.waking { font-size: .8rem; color: var(--soft); margin-top: 8px; }
 
 [hidden] { display: none !important; }
-@media(prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: .01ms !important; } }
 </style>
 </head>
 <body>
-<main>
-<div class="brand">
-<div class="mark">F</div>
-<div>
-<h1>Factor</h1>
-<p>Kahin se bhi upload karo, seedha Google Drive mein</p>
-</div>
-</div>
 
-<section id="boot" class="card glass">
-<div class="loading"><span class="spin"></span>Connect ho raha hai...</div>
-<p class="waking" id="wakingMsg" hidden>Server neend se jaag raha hai, thoda sa wait karo...</p>
-</section>
+<!-- boot -->
+<main id="boot">
+  <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
+  <h1>Factor</h1>
+  <div class="loading"><span class="spin"></span>Connect ho raha hai...</div>
+  <p class="waking" id="wakingMsg" hidden>Server neend se jaag raha hai, thoda sa wait karo...</p>
+</main>
 
-<section id="login" class="card glass" hidden>
-<label for="pw">Password</label>
-<div class="pwrap">
-<input id="pw" type="password" placeholder="Password yahan likhein" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text">
-<button type="button" class="eye" id="eye" aria-label="Password dikhao">
-<svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-</button>
-</div>
-<p id="msg" role="alert"></p>
-<button id="loginBtn" class="block">Login</button>
-</section>
+<!-- login -->
+<main id="login" hidden>
+  <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
+  <h1>Login</h1>
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <input id="user" name="username" type="text" placeholder="Username" aria-label="Username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2zm-7-2a2 2 0 0 1 4 0v2h-4V7z"/></svg>
+      <input id="pw" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="eye" id="eye" aria-label="Password dikhao">
+        <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="opts">
+      <label class="check">
+        <input type="checkbox" id="remember">
+        <span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.5 2.5L10 3"/></svg></span>
+        Remember me
+      </label>
+    </div>
+    <p id="msg" role="alert"></p>
+    <button type="submit" id="loginBtn" class="btn">Login</button>
+  </form>
+</main>
 
-<section id="app" class="card glass" hidden>
-<div class="top"><span class="hint">Max file size: 2 GB</span><button class="ghost" id="logout">Logout</button></div>
-<div class="drop glass" id="drop" tabindex="0" role="button" aria-label="Files chuno">
-<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-<strong>Files yahan drop karo</strong>
-<button type="button" class="browse" id="browseBtn">Browse Files</button>
-</div>
-<input id="file" type="file" hidden accept="*/*">
-<div id="list"></div>
-</section>
+<!-- upload page -->
+<main id="app" class="wide" hidden>
+  <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
+  <h1>Upload</h1>
+  <p class="sub">Seedha Google Drive mein &nbsp;•&nbsp; Max file size: 2 GB</p>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Files chuno">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <strong>Files yahan drop karo</strong>
+    <button type="button" class="btn sm" id="browseBtn">Browse Files</button>
+  </div>
+  <input id="file" type="file" hidden accept="*/*">
+  <div id="list"></div>
+  <div class="foot"><button class="link" id="logout">Logout</button></div>
 </main>
 
 <script>
@@ -191,12 +207,21 @@ async function api(path, body, timeoutMs) {
 }
 
 /* ---------- boot / login ---------- */
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  del: k => { try { localStorage.removeItem(k); } catch {} }
+};
 function showScreen(which) {
   $("boot").hidden = which !== "boot";
   $("login").hidden = which !== "login";
   $("app").hidden = which !== "app";
-  if (which === "login") setTimeout(() => $("pw").focus(), 50);
+  if (which === "login") setTimeout(() => ($("user").value ? $("pw") : $("user")).focus(), 50);
 }
+(function restoreUser() {
+  const u = store.get("factor_user");
+  if (u) { $("user").value = u; $("remember").checked = true; }
+})();
 
 (async () => {
   const wakeTimer = setTimeout(() => { $("wakingMsg").hidden = false; }, 4000);
@@ -213,10 +238,13 @@ function showScreen(which) {
 
 async function doLogin() {
   $("msg").textContent = "";
+  const username = $("user").value.trim();
+  if (!username || !$("pw").value) { $("msg").textContent = "Username aur password dono likhein"; return; }
   const btn = $("loginBtn");
   btn.disabled = true; btn.textContent = "Checking...";
   try {
-    await api("/api/login", {password: $("pw").value});
+    await api("/api/login", {username, password: $("pw").value});
+    if ($("remember").checked) store.set("factor_user", username); else store.del("factor_user");
     $("pw").value = "";
     showScreen("app");
   } catch (e) {
@@ -225,10 +253,7 @@ async function doLogin() {
     btn.disabled = false; btn.textContent = "Login";
   }
 }
-$("loginBtn").onclick = doLogin;
-$("pw").addEventListener("keydown", function (e) {
-  if (e.key === "Enter") { e.preventDefault(); doLogin(); }
-});
+$("loginForm").addEventListener("submit", e => { e.preventDefault(); doLogin(); });
 $("eye").onclick = () => {
   const showing = $("pw").type === "text";
   $("pw").type = showing ? "password" : "text";
