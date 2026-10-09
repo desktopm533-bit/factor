@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4a82da">
 <meta name="color-scheme" content="light">
-<title>Factor — Upload to Drive</title>
+<title>Factor — Fast as Wish</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,8 +138,8 @@ button:focus-visible, .drop:focus-visible { outline: 2px solid #fff; outline-off
 <main id="boot">
   <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
   <h1>Factor</h1>
-  <div class="loading"><span class="spin"></span>Connect ho raha hai...</div>
-  <p class="waking" id="wakingMsg" hidden>Server neend se jaag raha hai, thoda sa wait karo...</p>
+  <div class="loading"><span class="spin"></span>Conecting...</div>
+  <p class="waking" id="wakingMsg" hidden>Preparing Something Please Wait...</p>
 </main>
 
 <!-- login -->
@@ -173,8 +173,8 @@ button:focus-visible, .drop:focus-visible { outline: 2px solid #fff; outline-off
 <!-- upload page -->
 <main id="app" class="wide" hidden>
   <div class="plate"><img src="/factor-logo.png" alt="Factor"></div>
-  <h1>Upload</h1>
-  <p class="sub">Seedha Google Drive mein &nbsp;•&nbsp; Max file size: 2 GB</p>
+  <h1>Faster</h1>
+  <p class="sub">Select Files and See Magic &nbsp;•&nbsp; Max file size: 2 GB</p>
   <div class="drop" id="drop" tabindex="0" role="button" aria-label="Files chuno">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     <strong>Files yahan drop karo (aik ya zyada)</strong>
@@ -228,7 +228,7 @@ function showScreen(which) {
 (async () => {
   const wakeTimer = setTimeout(() => { $("wakingMsg").hidden = false; }, 4000);
   try {
-    const j = await api("/api/me", null, 60000);  // Render free tier cold start allow karo
+    const j = await api("/api/me", null, 60000);  // 
     clearTimeout(wakeTimer);
     showScreen(j.ok ? "app" : "login");
   } catch (e) {
@@ -241,7 +241,7 @@ function showScreen(which) {
 async function doLogin() {
   $("msg").textContent = "";
   const username = $("user").value.trim();
-  if (!username || !$("pw").value) { $("msg").textContent = "Username aur password dono likhein"; return; }
+  if (!username || !$("pw").value) { $("msg").textContent = "Enter Username and Password"; return; }
   const btn = $("loginBtn");
   btn.disabled = true; btn.textContent = "Checking...";
   try {
@@ -354,7 +354,7 @@ async function uploadOne(file, row) {
     }
   }
   bar.style.width = "100%"; sp.textContent = "";
-  st.textContent = "Drive mein save ho gayi"; st.className = "st okc";
+  st.textContent = "File Loaded Successfully!"; st.className = "st okc";
 }
 </script>
 </body>
